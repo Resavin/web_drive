@@ -5,15 +5,16 @@ WORKDIR /web_drive
 
 COPY requirements.txt ./
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip3 install -r requirements.txt
+# RUN --mount=type=cache,target=/root/.cache/pip \
+    # pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 COPY .env ./
-# COPY data ./data
 COPY app ./app
 
+WORKDIR data
 
 EXPOSE 8000
 
-CMD ["python", "app/run.py"]
+CMD ["python", "../app/run.py"]
 # CMD ["sh", "-c", "tail -f /dev/null"]

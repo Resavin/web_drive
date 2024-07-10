@@ -1,3 +1,8 @@
+!.env
+plan.md
+postgres_data
+data
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -123,6 +128,7 @@ celerybeat.pid
 
 # Environments
 .venv
+.env
 env/
 venv/
 ENV/
