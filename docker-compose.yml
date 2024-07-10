@@ -16,6 +16,5 @@ services:
       - "${FASTAPI_PORT}:${FASTAPI_PORT}"
     volumes:
       - ./app:/web_drive/app
-      - ./data:${ROOT_DIRECTORY}
     depends_on:
       - db
