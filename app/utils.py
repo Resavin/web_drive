@@ -9,8 +9,9 @@ def get_full_path(file: File):
 
 
 def check_duplicate_path(session: Session, file: File, file_changes: FileChanges | None = None):
+    new_path = file_changes.path if file_changes else file.path
     statement = select(File).where(
-                File.path == file_changes.path if file_changes else file.path,
+                File.path == new_path,
                 File.path == file.path,
                 File.name == file.name,
                 File.extension == file.extension
