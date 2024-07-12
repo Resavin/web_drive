@@ -1,225 +1,64 @@
+# main.py
+
+import os
+
+from db import engine
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from sqlmodel import Session, select, SQLModel
-import os
-import shutil
-from datetime import datetime
-from utils import (
-    check_duplicate_path,
-    normalize_path,
-    scan_directory,
-    get_full_path,
-    log,  # noqa: F401
-)
-from models import File, FileCreate, FilePublic, FileChanges
-from db import engine
-from load_env import DEBUG, ROOT_DIRECTORY
-
+from models import FileChanges, FileCreate, FilePublic
+from services import FileService
+from sqlmodel import SQLModel
+from config import settings
 
 SQLModel.metadata.create_all(engine)
-app = FastAPI(debug=DEBUG)
+app = FastAPI(debug=settings.app_debug)
 
 
 @app.post("/create-file/")
 def create_file(file: FileCreate):
-    file = File.model_validate(file)
-    normalize_path(file)
-    with Session(engine) as session:
-        check_duplicate_path(session, file)
-        session.add(file)
-        session.commit()
-        session.refresh(file)
-        return file
+    return FileService.create_file(file)
 
 
 @app.get("/files/")
 def read_files():
-    with Session(engine) as session:
-        files = session.exec(select(File)).all()
-        return files
+    return FileService.read_files()
 
 
 @app.get("/files/{file_id}", response_model=FilePublic)
 def read_file(file_id: int):
-    with Session(engine) as session:
-        file = session.get(File, file_id)
-        if not file:
-            raise HTTPException(status_code=404, detail="file not found")
-        return file
+    return FileService.read_file(file_id)
 
 
 @app.post("/upload-file/")
 async def upload_file(upload_file: UploadFile, file_changes: str | None = None):
-    if file_changes:
-        file_changes = FileChanges.model_validate_json(file_changes)
-
-    name, ext = os.path.splitext(upload_file.filename)
-
-    file_data = {
-        "id": None,
-        "name": name,
-        "extension": ext,
-        "size": 0,  # added after reading the file
-        "path": "/",
-        "creation_date": datetime.utcnow().isoformat(),
-        "modification_date": None,
-        "comment": None,
-    }
-
-    if file_changes:
-        update_data = {
-            key: value
-            for key, value in file_changes.dict().items()
-            if value is not None
-        }
-        file_data.update(update_data)
-
-    file = File(**file_data)
-
-    normalize_path(file)
-
-    with open(get_full_path(file), "wb") as f:
-        contents = await upload_file.read()
-        f.write(contents)
-
-    file.size = len(contents)
-
-    with Session(engine) as session:
-        check_duplicate_path(session, file)
-        session.add(file)
-        session.commit()
-        session.refresh(file)
-        return file
+    return await FileService.upload_file(upload_file, file_changes)
 
 
 @app.delete("/delete-file/{file_id}")
 def delete_file(file_id: int):
-    with Session(engine) as session:
-        file = session.get(File, file_id)
-        if not file:
-            raise HTTPException(
-                status_code=404, detail="File record not found")
-        session.delete(file)
-        session.commit()
-
-    file_path = os.path.join(ROOT_DIRECTORY, file.path.lstrip("/"))
-
-    try:
-        os.remove(file_path)
-        return {"message": "File was successfully deleted."}
-    except FileNotFoundError:
-        return {
-            "message": "The record was deleted, but there was no such file in storage."
-        }
-    except Exception:
-        return {
-            "message": "The record was deleted, but something unexpected happened during file deletion in storage."
-        }
+    return FileService.delete_file(file_id)
 
 
 @app.get("/search-in-path/{subpath}")
 def search_files(subpath: str):
-    with Session(engine) as session:
-        statement = select(File).where(File.path.contains(subpath))
-        results = session.exec(statement).all()
-        return results
+    return FileService.search_files(subpath)
 
 
 @app.get("/download-file/{file_id}", response_class=FileResponse)
 def download_file(file_id: int):
-    with Session(engine) as session:
-        file = session.get(File, file_id)
-        if not file:
-            raise HTTPException(
-                status_code=404, detail="File record not found")
-
-        full_path = get_full_path(file)
-        if not os.path.exists(full_path):
-            raise HTTPException(
-                status_code=404, detail="File not found on disk")
-
+    full_path = FileService.download_file(file_id)
     return FileResponse(
         path=full_path,
-        filename=file.name + file.extension,
+        filename=os.path.basename(full_path),
         media_type="application/octet-stream",
     )
 
 
 @app.post("/change-file/{file_id}")
 def change_file(file_id: int, file_changes: FileChanges):
-    if any([file_changes.name, file_changes.path, file_changes.comment]):
-        with Session(engine) as session:
-            file = session.get(File, file_id)
-            if not file:
-                raise HTTPException(
-                    status_code=404, detail="File record not found")
-
-            old_full_path = get_full_path(file)
-            if file_changes.name:
-                file.name = file_changes.name
-            if file_changes.path:
-                file.path = file_changes.path
-                normalize_path(file_changes)
-                check_duplicate_path(session, file, file_changes)
- 
-            shutil.move(
-                old_full_path,
-                get_full_path(file)
-            )
-
-            if file_changes.comment:
-                file.comment = file_changes.comment
-
-            file.modification_date = datetime.utcnow().isoformat()
-            session.commit()
-            session.refresh(file)
-
-            return file
+    return FileService.change_file(file_id, file_changes)
 
 
 @app.post("/sync")
 def sync():
-    scanned_files = scan_directory(ROOT_DIRECTORY)
-    print(scanned_files)
-    with Session(engine) as session:
-        db_files = session.exec(select(File)).all()
-        db_files_dict = {
-            os.path.join(file.path, file.name + file.extension): file.id
-            for file in db_files
-        }
-
-        file_paths_to_add = set()
-        ids_to_delete = set(db_files_dict.values())
-
-        for file_path in scanned_files:
-            if file_path in db_files_dict.keys():
-                ids_to_delete.remove(db_files_dict[file_path])
-            else:
-                file_paths_to_add.add(file_path)
-
-        for path_with_name in file_paths_to_add:
-            new_file_stat = os.stat(path_with_name.lstrip('/'))
-            name, ext = os.path.splitext(os.path.basename(path_with_name))
-
-            new_file = File(
-                id=None,
-                name=name,
-                extension=ext,
-                size=new_file_stat.st_size,
-                path=os.path.dirname(path_with_name),
-                creation_date=datetime.fromtimestamp(
-                    new_file_stat.st_ctime
-                ).isoformat(),
-                modification_date=datetime.fromtimestamp(
-                    new_file_stat.st_mtime
-                ).isoformat(),
-                comment=None,
-            )
-            session.add(new_file)
-            session.commit()
-            session.refresh(new_file)
-
-        for id in ids_to_delete:
-            delete_file(id)
-
-        return {"added_files": file_paths_to_add, "deleted_files": ids_to_delete}
+    return FileService.sync()

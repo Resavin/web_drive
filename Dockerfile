@@ -10,11 +10,13 @@ COPY requirements.txt ./
 RUN pip3 install -r requirements.txt
 
 COPY .env ./
+
 COPY app ./app
 
 WORKDIR /web_drive/data
 
 EXPOSE 8000
 
-CMD ["python", "../app/run.py"]
+CMD ["python", "/web_drive/app/run.py"]
+# CMD ["uvicorn", "app:app", "--host", "$APP_HOST", "--port", "$APP_PORT"]
 # CMD ["sh", "-c", "tail -f /dev/null"]

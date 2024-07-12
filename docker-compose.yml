@@ -8,7 +8,7 @@ services:
     volumes:
       - ./app:/web_drive/app
       - ./data:/web_drive/data
-    restart: always
+    restart: always # or depends_on (with it is possible to move "web" below "db")
 
   db:
     image: postgres:13
