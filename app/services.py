@@ -6,12 +6,11 @@ from datetime import datetime
 
 from db import engine
 from fastapi import HTTPException, UploadFile
-from models import File, FileChanges, FileCreate, FilePublic
+from models import File, FileChanges, FileCreate
 from sqlmodel import Session, select
-from utils import log  # noqa: F401
+from utils import dlog  # noqa: F401
 from utils import check_duplicate_path, get_full_path, normalize_path, scan_directory
 from config import settings
-from utils import logger
 
 
 class FileService:
@@ -28,7 +27,6 @@ class FileService:
 
     @staticmethod
     def read_files():
-        logger.info("ASDSADASDAD")
         with Session(engine) as session:
             files = session.exec(select(File)).all()
             return files
