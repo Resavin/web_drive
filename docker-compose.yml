@@ -1,4 +1,15 @@
 services:
+  web:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    volumes:
+      - ./app:/web_drive/app
+      - ./data:/web_drive/data
+    restart: always
+
   db:
     image: postgres:13
     environment:
@@ -9,13 +20,3 @@ services:
       - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
-
-  web:
-    build: .
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
-    volumes:
-      - ./app:/web_drive/app
-      - ./data:/web_drive/data

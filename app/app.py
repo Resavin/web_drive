@@ -97,7 +97,8 @@ def delete_file(file_id: int):
     with Session(engine) as session:
         file = session.get(File, file_id)
         if not file:
-            raise HTTPException(status_code=404, detail="File record not found")
+            raise HTTPException(
+                status_code=404, detail="File record not found")
         session.delete(file)
         session.commit()
 
@@ -129,11 +130,13 @@ def download_file(file_id: int):
     with Session(engine) as session:
         file = session.get(File, file_id)
         if not file:
-            raise HTTPException(status_code=404, detail="File record not found")
+            raise HTTPException(
+                status_code=404, detail="File record not found")
 
         full_path = get_full_path(file)
         if not os.path.exists(full_path):
-            raise HTTPException(status_code=404, detail="File not found on disk")
+            raise HTTPException(
+                status_code=404, detail="File not found on disk")
 
     return FileResponse(
         path=full_path,
@@ -148,22 +151,21 @@ def change_file(file_id: int, file_changes: FileChanges):
         with Session(engine) as session:
             file = session.get(File, file_id)
             if not file:
-                raise HTTPException(status_code=404, detail="File record not found")
-            
+                raise HTTPException(
+                    status_code=404, detail="File record not found")
+
             old_full_path = get_full_path(file)
             if file_changes.name:
                 file.name = file_changes.name
             if file_changes.path:
-                normalize_path(file_changes)
-                shutil.move(
-                    old_full_path,
-                    os.path.join(
-                        ROOT_DIRECTORY, file_changes.path.lstrip('/'), file_changes.name + file.extension if file_changes.name else file.name + file.extension
-                    ),
-                )
-                check_duplicate_path(session, file, file_changes)
                 file.path = file_changes.path
-            
+                normalize_path(file_changes)
+                check_duplicate_path(session, file, file_changes)
+ 
+            shutil.move(
+                old_full_path,
+                get_full_path(file)
+            )
 
             if file_changes.comment:
                 file.comment = file_changes.comment
@@ -195,7 +197,6 @@ def sync():
             else:
                 file_paths_to_add.add(file_path)
 
-
         for path_with_name in file_paths_to_add:
             new_file_stat = os.stat(path_with_name.lstrip('/'))
             name, ext = os.path.splitext(os.path.basename(path_with_name))
@@ -220,5 +221,5 @@ def sync():
 
         for id in ids_to_delete:
             delete_file(id)
-            
+
         return {"added_files": file_paths_to_add, "deleted_files": ids_to_delete}

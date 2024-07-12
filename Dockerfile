@@ -12,7 +12,7 @@ RUN pip3 install -r requirements.txt
 COPY .env ./
 COPY app ./app
 
-WORKDIR data
+WORKDIR /web_drive/data
 
 EXPOSE 8000
 

@@ -2,16 +2,14 @@ import os
 from fastapi import HTTPException
 from sqlmodel import Session, select
 from load_env import ROOT_DIRECTORY
-from models import File, FileChanges
+from models import File
 
 def get_full_path(file: File):
     return os.path.join(ROOT_DIRECTORY, file.path.lstrip('/'), file.name+file.extension)
 
 
-def check_duplicate_path(session: Session, file: File, file_changes: FileChanges | None = None):
-    new_path = file_changes.path if file_changes else file.path
+def check_duplicate_path(session: Session, file: File):
     statement = select(File).where(
-                File.path == new_path,
                 File.path == file.path,
                 File.name == file.name,
                 File.extension == file.extension
@@ -20,7 +18,7 @@ def check_duplicate_path(session: Session, file: File, file_changes: FileChanges
     if existing_file:
         raise HTTPException(status_code=400, detail="File with the same path, name, and extension already exists")
 
-def normalize_path(file: File | FileChanges):
+def normalize_path(file: File):
     if file.path != '/':
         try:
             os.makedirs(file.path.lstrip('/'), exist_ok=True)
