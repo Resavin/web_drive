@@ -45,21 +45,21 @@ def create_and_write_file(file_data: FileCreate) -> File:
     return new_file
 
 
-def test_create_file(client: TestClient, session: Session):
-    file_data = {
-        "name": "testfile",
-        "extension": ".txt",
-        "size": 123,
-        "path": "/",
-        "creation_date": "2023-07-01T00:00:00",
-        "modification_date": None,
-        "comment": "A test file",
-    }
-    response = client.post("/create-file/", json=file_data)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["name"] == "testfile"
-    assert data["extension"] == ".txt"
+# def test_create_file(client: TestClient, session: Session):
+#     file_data = {
+#         "name": "testfile",
+#         "extension": ".txt",
+#         "size": 123,
+#         "path": "/",
+#         "creation_date": "2023-07-01T00:00:00",
+#         "modification_date": None,
+#         "comment": "A test file",
+#     }
+#     response = client.post("/create-file/", json=file_data)
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert data["name"] == "testfile"
+#     assert data["extension"] == ".txt"
 
 
 def test_read_files(client: TestClient, session: Session):
@@ -92,7 +92,8 @@ def test_upload_file(client: TestClient, session: Session):
         pass
     with open(file_path, "rb") as f:
         response = client.post(
-            "/upload-file/?file_changes=%7B%22comment%22%3A%20%22uploaded%20file%22%2C%20%22name%22%3A%20%22tested%22%2C%20%22path%22%3A%20%22super%2Fpath%22%7D",
+            "/upload-file/",
+            params={"name": "tested", "comment": "uploaded file", "path": "super/path"},
             files={"upload_file": (file_path, f, "text/plain")},
         )
     os.remove(file_path)

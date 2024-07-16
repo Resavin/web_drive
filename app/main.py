@@ -12,9 +12,12 @@ SQLModel.metadata.create_all(engine)
 app = FastAPI(debug=settings.app_debug)
 
 
-@app.post("/create-file/")
-def create_file(file: FileCreate):
-    return FileService.create_file(file)
+# @app.post("/create-file/")
+# def create_file(file: FileCreate):
+#     """
+#     DEBUG ROUTE FOR ADDING A RECORD TO DB WITHOUT UPLOADING THE FILE
+#     """
+#     return FileService.create_file(file)
 
 
 @app.get("/files/")
