@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from utils import (check_duplicate_path, get_full_path, normalize_path,
                    scan_directory)
 
+
 class FileService:
     @staticmethod
     def create_file(file_data: FileCreate):
@@ -90,7 +91,8 @@ class FileService:
         with Session(engine) as session:
             file = session.get(File, file_id)
             if not file:
-                raise HTTPException(status_code=404, detail="File record not found")
+                raise HTTPException(
+                    status_code=404, detail="File record not found")
             session.delete(file)
             session.commit()
 
@@ -118,11 +120,13 @@ class FileService:
         with Session(engine) as session:
             file = session.get(File, file_id)
             if not file:
-                raise HTTPException(status_code=404, detail="File record not found")
+                raise HTTPException(
+                    status_code=404, detail="File record not found")
 
             full_path = get_full_path(file)
             if not os.path.exists(full_path):
-                raise HTTPException(status_code=404, detail="File not found on disk")
+                raise HTTPException(
+                    status_code=404, detail="File not found on disk")
 
         return full_path
 
@@ -132,7 +136,8 @@ class FileService:
             with Session(engine) as session:
                 file = session.get(File, file_id)
                 if not file:
-                    raise HTTPException(status_code=404, detail="File record not found")
+                    raise HTTPException(
+                        status_code=404, detail="File record not found")
 
                 old_full_path = get_full_path(file)
                 if file_changes.name:
@@ -140,7 +145,7 @@ class FileService:
                 if file_changes.path:
                     file.path = file_changes.path
                     normalize_path(file_changes)
-                    check_duplicate_path(session, file, file_changes)
+                    check_duplicate_path(session, file)
 
                 shutil.move(old_full_path, get_full_path(file))
 
@@ -176,7 +181,8 @@ class FileService:
                 name, ext = os.path.splitext(os.path.basename(path_with_name))
 
                 new_file = File(
-                    id=None,  # maybe it should be FileCreate, but cool that it works.
+                    # maybe it should be FileCreate, but cool that it works.
+                    id=None,
                     name=name,
                     extension=ext,
                     size=new_file_stat.st_size,
