@@ -8,6 +8,10 @@
 ```bash
 docker-compose up --build
 ```
+или
+```
+make up
+```
 
 Посмотреть документацию и проверить API можно в браузере по ссылке `адрес_сервера:порт/docs` (например, `127.0.0.1:8000/docs`)
 
@@ -17,9 +21,22 @@ docker-compose up --build
 
 Пример: `/dir`
 
-Для тестов:
-```bash
-docker-compose -f test.docker-compose.yml up --build
-```
+### Для тестов:
 
+1. Запустить контейнеры
+    ```bash
+    docker-compose -f test.docker-compose.yml up --build
+    ```
+    или 
+    ```bash
+    make testup
+    ```
+2. Запустить тесты
+    ```bash
+    docker exec -it web_drive-web-1 pytest -s
+    ```
+    или
+    ```bash
+    make test
+    ```
 Данные для приложения хранятся здесь, а данные для тестов только в докер контейнерах
