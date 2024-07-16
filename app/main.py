@@ -4,7 +4,7 @@ from config import settings
 from db import engine
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import FileResponse
-from models import FileChanges, FileCreate, FilePublic
+from models import FileChanges, FilePublic
 from services import FileService
 from sqlmodel import SQLModel
 

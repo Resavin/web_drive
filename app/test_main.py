@@ -5,7 +5,6 @@ import pytest
 from config import settings
 from db import engine
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
 from main import app
 from models import File, FileCreate
 from services import FileService
@@ -30,12 +29,6 @@ def session_fixture():
 @pytest.fixture(name="client")
 def client_fixture():
     return TestClient(app)
-
-
-@pytest.fixture(name="async_client")
-async def async_client_fixture():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
 
 
 def create_and_write_file(file_data: FileCreate) -> File:
@@ -93,7 +86,8 @@ def test_upload_file(client: TestClient, session: Session):
     with open(file_path, "rb") as f:
         response = client.post(
             "/upload-file/",
-            params={"name": "tested", "comment": "uploaded file", "path": "super/path"},
+            params={"name": "tested", "comment": "uploaded file",
+                    "path": "super/path"},
             files={"upload_file": (file_path, f, "text/plain")},
         )
     os.remove(file_path)
