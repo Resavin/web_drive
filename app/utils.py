@@ -47,17 +47,3 @@ def scan_directory(directory):
             file_path = os.path.join(root, file)
             file_path_set.add("/" + file_path.removeprefix(directory + "/"))
     return file_path_set
-
-
-def dlog(s: str):
-    print()
-    print()
-    print()
-    print()
-    print("==================")
-    print(s)
-    print("==================")
-    print()
-    print()
-    print()
-    print()

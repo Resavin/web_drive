@@ -9,10 +9,8 @@ from db import engine
 from fastapi import HTTPException, UploadFile
 from models import File, FileChanges, FileCreate
 from sqlmodel import Session, select
-from utils import dlog  # noqa: F401
 from utils import (check_duplicate_path, get_full_path, normalize_path,
                    scan_directory)
-
 
 class FileService:
     @staticmethod
@@ -169,7 +167,6 @@ class FileService:
             for path_with_name in file_paths_to_add:
                 os.chdir(settings.root_directory)
                 new_file_stat = os.stat(path_with_name.lstrip("/"))
-                dlog(path_with_name)
                 name, ext = os.path.splitext(os.path.basename(path_with_name))
 
                 new_file = File(

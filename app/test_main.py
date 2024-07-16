@@ -10,7 +10,7 @@ from main import app
 from models import File, FileCreate
 from services import FileService
 from sqlmodel import Session, SQLModel
-from utils import dlog, get_full_path
+from utils import get_full_path
 
 client = TestClient(app)
 
@@ -210,6 +210,5 @@ def test_sync(client: TestClient, session: Session):
         response = client.post("/sync")
         assert response.status_code == 200
         data = response.json()
-        dlog(data)
         assert filename in data["added_files"][0]
         assert file.id in data["deleted_files"]
