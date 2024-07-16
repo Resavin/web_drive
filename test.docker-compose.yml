@@ -1,14 +1,13 @@
 services:
   web:
-    build: .
+    build:
+      dockerfile: Dockerfile.test
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
     ports:
       - "${APP_PORT}:${APP_PORT}"
     volumes:
       - ./app:/web_drive/app
-      - ./data:/web_drive/data
-    restart: always # or depends_on (with it is possible to move "web" below "db")
 
   db:
     image: postgres:13
@@ -16,6 +15,5 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data
     # ports: "${POSTGRES_PORT}:${POSTGRES_PORT}" # If you locally connect
+

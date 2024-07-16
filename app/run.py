@@ -6,6 +6,6 @@ if __name__ == "__main__":
         "main:app",
         reload_dirs=["/web_drive/app"],
         host=settings.app_host,
-        port=int(settings.app_port),
+        port=settings.app_port,
         reload=settings.app_debug,
     )

@@ -1,9 +1,10 @@
 import os
 
+from config import settings
 from fastapi import HTTPException
 from models import File
 from sqlmodel import Session, select
-from config import settings
+
 
 def get_full_path(file: File):
     return os.path.join(
@@ -19,14 +20,17 @@ def check_duplicate_path(session: Session, file: File):
     if existing_file:
         raise HTTPException(
             status_code=400,
-            detail="File with the same path, name, and extension already exists",
+            detail="File record in db with the same path, name, and extension already exists",
         )
 
 
 def normalize_path(file: File):
     if file.path != "/":
         try:
-            os.makedirs(file.path.lstrip("/"), exist_ok=True)
+            os.makedirs(
+                os.path.join(settings.root_directory, file.path.lstrip("/")),
+                exist_ok=True,
+            )
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid path")
 
@@ -50,7 +54,9 @@ def dlog(s: str):
     print()
     print()
     print()
+    print("==================")
     print(s)
+    print("==================")
     print()
     print()
     print()

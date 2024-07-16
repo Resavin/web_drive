@@ -4,13 +4,14 @@ import os
 import shutil
 from datetime import datetime
 
+from config import settings
 from db import engine
 from fastapi import HTTPException, UploadFile
 from models import File, FileChanges, FileCreate
 from sqlmodel import Session, select
 from utils import dlog  # noqa: F401
-from utils import check_duplicate_path, get_full_path, normalize_path, scan_directory
-from config import settings
+from utils import (check_duplicate_path, get_full_path, normalize_path,
+                   scan_directory)
 
 
 class FileService:
@@ -60,14 +61,13 @@ class FileService:
         if file_changes:
             update_data = {
                 key: value
-                for key, value in file_changes.dict().items()
+                for key, value in file_changes.model_dump().items()
                 if value is not None
             }
             file_data.update(update_data)
 
         file = File(**file_data)
         normalize_path(file)
-
         with open(get_full_path(file), "wb") as f:
             contents = await upload_file.read()
             f.write(contents)
@@ -90,10 +90,8 @@ class FileService:
             session.delete(file)
             session.commit()
 
-        file_path = os.path.join(settings.root_directory, file.path.lstrip("/"))
-
         try:
-            os.remove(file_path)
+            os.remove(get_full_path(file))
             return {"message": "File was successfully deleted."}
         except FileNotFoundError:
             return {
@@ -157,10 +155,7 @@ class FileService:
         print(scanned_files)
         with Session(engine) as session:
             db_files = session.exec(select(File)).all()
-            db_files_dict = {
-                os.path.join(file.path, file.name + file.extension): file.id
-                for file in db_files
-            }
+            db_files_dict = {get_full_path(file): file.id for file in db_files}
 
             file_paths_to_add = set()
             ids_to_delete = set(db_files_dict.values())
@@ -172,11 +167,13 @@ class FileService:
                     file_paths_to_add.add(file_path)
 
             for path_with_name in file_paths_to_add:
+                os.chdir(settings.root_directory)
                 new_file_stat = os.stat(path_with_name.lstrip("/"))
+                dlog(path_with_name)
                 name, ext = os.path.splitext(os.path.basename(path_with_name))
 
                 new_file = File(
-                    id=None,
+                    id=None,  # maybe it should be FileCreate, but cool that it works.
                     name=name,
                     extension=ext,
                     size=new_file_stat.st_size,

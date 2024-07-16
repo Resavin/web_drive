@@ -1,14 +1,12 @@
-# main.py
-
 import os
 
+from config import settings
 from db import engine
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, UploadFile
 from fastapi.responses import FileResponse
 from models import FileChanges, FileCreate, FilePublic
 from services import FileService
 from sqlmodel import SQLModel
-from config import settings
 
 SQLModel.metadata.create_all(engine)
 app = FastAPI(debug=settings.app_debug)
