@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from models import FileChanges, FilePublic
 from services import FileService
 from sqlmodel import SQLModel
+from fastapi.middleware.cors import CORSMiddleware
 
 SQLModel.metadata.create_all(engine)
 app = FastAPI(debug=settings.app_debug)
@@ -18,6 +19,18 @@ app = FastAPI(debug=settings.app_debug)
 #     DEBUG ROUTE FOR ADDING A RECORD TO DB WITHOUT UPLOADING THE FILE
 #     """
 #     return FileService.create_file(file)
+
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/files/")
