@@ -39,9 +39,15 @@ class FileService:
             return file
 
     @staticmethod
-    async def upload_file(upload_file: UploadFile, file_changes: str | None = None):
-        if file_changes:
-            file_changes = FileChanges.model_validate_json(file_changes)
+    async def upload_file(
+        upload_file: UploadFile,
+        name: str | None = None,
+        path: str | None = None,
+        comment: str | None = None,
+    ):
+        file_changes = FileChanges(name=name, path=path, comment=comment)
+        # if file_changes:
+        # file_changes = FileChanges.model_validate_json(file_changes)
 
         name, ext = os.path.splitext(upload_file.filename)
 

@@ -28,8 +28,13 @@ def read_file(file_id: int):
 
 
 @app.post("/upload-file/")
-async def upload_file(upload_file: UploadFile, file_changes: str | None = None):
-    return await FileService.upload_file(upload_file, file_changes)
+async def upload_file(
+    upload_file: UploadFile,
+    name: str | None = None,
+    path: str | None = None,
+    comment: str | None = None,
+):
+    return await FileService.upload_file(upload_file, name, path, comment)
 
 
 @app.delete("/delete-file/{file_id}")
