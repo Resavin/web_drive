@@ -11,11 +11,15 @@ from models import File, FileChanges, FileCreate
 from sqlmodel import Session, select
 from utils import (check_duplicate_path, get_full_path, normalize_path,
                    scan_directory)
+from logger import logger
 
 
 class FileService:
     @staticmethod
     def create_file(file_data: FileCreate):
+        """
+        DEBUG ROUTE FOR ADDING A RECORD TO DB WITHOUT UPLOADING THE FILE
+        """
         file = File.model_validate(file_data)
         normalize_path(file)
         with Session(engine) as session:
@@ -143,9 +147,9 @@ class FileService:
                 if file_changes.name:
                     file.name = file_changes.name
                 if file_changes.path:
-                    file.path = file_changes.path
                     normalize_path(file_changes)
-                    check_duplicate_path(session, file)
+                    check_duplicate_path(session, file, file_changes.path)
+                    file.path = file_changes.path
 
                 shutil.move(old_full_path, get_full_path(file))
 

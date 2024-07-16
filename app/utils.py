@@ -2,8 +2,9 @@ import os
 
 from config import settings
 from fastapi import HTTPException
-from models import File
+from models import File, FileChanges
 from sqlmodel import Session, select
+from logger import logger
 
 
 def get_full_path(file: File):
@@ -12,19 +13,38 @@ def get_full_path(file: File):
     )
 
 
-def check_duplicate_path(session: Session, file: File):
+def check_duplicate_path(
+    session: Session, file: File, file_changes: FileChanges | None = None
+):
+    path = file.path
+    name = file.name
+    if file_changes:
+        logger.debug("check dup " + file_changes.path)
+        if file_changes.path:
+            path = file_changes.path
+        if file_changes.name:
+            name = file_changes.name
     statement = select(File).where(
-        File.path == file.path, File.name == file.name, File.extension == file.extension
+        File.path == path, File.name == name, File.extension == file.extension
     )
     existing_file = session.exec(statement).first()
-    if existing_file:
+
+    if existing_file or os.path.exists(
+        os.path.join(settings.root_directory, path, name + file.extension)
+    ):
         raise HTTPException(
             status_code=400,
             detail="File record in db with the same path, name, and extension already exists",
         )
 
 
-def normalize_path(file: File):
+def normalize_path(file: File | FileChanges):
+    splits = file.path.split("/")
+    if ".." in splits or "." in splits or "~" in splits:
+        raise HTTPException(
+            status_code=400, detail="Path shouldn't use '.', '..' or '~' "
+        )
+
     if file.path != "/":
         try:
             os.makedirs(
