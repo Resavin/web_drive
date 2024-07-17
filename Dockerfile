@@ -11,7 +11,7 @@ RUN pip3 install -r requirements.txt
 
 COPY .env ./
 
-COPY app ./app
+# COPY app ./app
 
 WORKDIR /web_drive/data
 

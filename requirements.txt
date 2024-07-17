@@ -2,5 +2,5 @@ fastapi==0.111.0
 sqlmodel==0.0.19
 psycopg2-binary==2.9.9
 pydantic-settings==2.3.4
-pytest
-anyio
+pika==1.3.2
+pillow==10.3.0

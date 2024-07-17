@@ -7,8 +7,8 @@ services:
       - "${APP_PORT}:${APP_PORT}"
     volumes:
       - ./app:/web_drive/app
-      - ./data:/web_drive/data
-    restart: always # or depends_on (with it is possible to move "web" below "db")
+      - ./data:${ROOT_DIRECTORY}
+    restart: unless-stopped # or depends_on (with it is possible to move "web" below "db")
 
   db:
     image: postgres:13
@@ -19,3 +19,29 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     # ports: "${POSTGRES_PORT}:${POSTGRES_PORT}" # If you locally connect
+
+  worker:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./app:/web_drive/app
+      - ./data:${ROOT_DIRECTORY}
+    command: python /web_drive/app/worker.py
+    depends_on:
+      rabbitmq:
+          condition: service_healthy
+    deploy:
+      replicas: ${RABBIT_WORKERS}
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    restart: always
+    ports:
+      # - "5672:5672"
+      - "${RABBIT_UI_PORT}:${RABBIT_UI_PORT}"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5

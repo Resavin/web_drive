@@ -9,15 +9,16 @@ COPY requirements.txt ./
 # RUN --mount=type=cache,target=/root/.cache/pip \
     # pip3 install -r requirements.txt
 RUN pip3 install -r requirements.txt
-RUN pip3 install pytest
+RUN pip3 install pytest==8.2.2
 
 COPY .env ./
 
 COPY app ./app
+COPY tests ./tests
 
-WORKDIR /web_drive/app
+WORKDIR /web_drive/tests
 
 EXPOSE 8000
 
-# CMD ["pytest", "/web_drive/app"]
+# CMD ["pytest", "/web_drive/tests"]
 CMD ["sh", "-c", "tail -f /dev/null"]

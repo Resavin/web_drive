@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from utils import (check_duplicate_path, get_full_path, normalize_path,
                    scan_directory)
 from logger import logger
+import pika
 
 
 class FileService:
@@ -207,3 +208,27 @@ class FileService:
                 FileService.delete_file(id)
 
             return {"added_files": file_paths_to_add, "deleted_files": ids_to_delete}
+
+    @staticmethod
+    def rotate_image(file_id: int):
+        with Session(engine) as session:
+            file = session.get(File, file_id)
+            if not file:
+                raise HTTPException(status_code=404, detail="file not found")
+
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters('rabbitmq'))
+        channel = connection.channel()
+        channel.queue_declare(queue='task_queue', durable=True)
+
+        message = get_full_path(file)
+
+        channel.basic_publish(exchange='',
+                              routing_key='task_queue',
+                              body=message,
+                              properties=pika.BasicProperties(
+                                  delivery_mode=pika.DeliveryMode.Persistent
+                              ))
+        logger.debug(f" [x] Sent {message}")
+        connection.close()
+        return {"message": "File was sent to workers"}

@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     postgres_port: str | None = None
     postgres_password: str | None = None
     postgres_db: str | None = None
+    rabbit_ui_port: str | None = None
+    rabbit_workers: str | None = None
 
     model_config = SettingsConfigDict(env_file="/web_drive/.env")
 

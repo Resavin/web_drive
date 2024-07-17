@@ -81,3 +81,8 @@ def change_file(file_id: int, file_changes: FileChanges):
 @app.post("/sync")
 def sync():
     return FileService.sync()
+
+
+@app.post("/rotate-image/{file_id}")
+def rotate_image(file_id: int):
+    return FileService.rotate_image(file_id)
