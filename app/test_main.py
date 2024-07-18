@@ -2,14 +2,14 @@ import os
 import shutil
 
 import pytest
-from config import settings
-from db import engine
+from app.config import settings
+from app.db import engine
 from fastapi.testclient import TestClient
 from main import app
-from models import File, FileCreate
-from services import FileService
+from app.models import File, FileCreate
+from app.services import FileService
 from sqlmodel import Session, SQLModel
-from utils import get_full_path
+from app.utils import get_full_path
 
 client = TestClient(app)
 

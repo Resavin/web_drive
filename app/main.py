@@ -1,11 +1,11 @@
 import os
 
-from config import settings
-from db import engine
+from app.config import settings
+from app.db import engine
 from fastapi import FastAPI, UploadFile
 from fastapi.responses import FileResponse
-from models import FileChanges, FilePublic
-from services import FileService
+from app.models import FileChanges, FilePublic
+from app.services import FileService
 from sqlmodel import SQLModel
 from fastapi.middleware.cors import CORSMiddleware
 

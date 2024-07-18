@@ -1,10 +1,10 @@
 import os
 
-from config import settings
+from app.config import settings
 from fastapi import HTTPException
-from models import File, FileChanges
+from app.models import File, FileChanges
 from sqlmodel import Session, select
-from logger import logger
+from app.logger import logger
 
 
 def get_full_path(file: File):

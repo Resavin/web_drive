@@ -1,5 +1,5 @@
 import pika
-from logger import logger
+from app.logger import logger
 from PIL import Image
 
 connection = pika.BlockingConnection(

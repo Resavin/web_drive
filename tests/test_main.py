@@ -87,8 +87,7 @@ def test_upload_file(client: TestClient, session: Session):
     with open(file_path, "rb") as f:
         response = client.post(
             "/upload-file/",
-            params={"name": "tested", "comment": "uploaded file",
-                    "path": "super/path"},
+            params={"name": "tested", "comment": "uploaded file", "path": "super/path"},
             files={"upload_file": (file_path, f, "text/plain")},
         )
     os.remove(file_path)

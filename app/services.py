@@ -4,14 +4,14 @@ import os
 import shutil
 from datetime import datetime
 
-from config import settings
-from db import engine
+from app.config import settings
+from app.db import engine
 from fastapi import HTTPException, UploadFile
-from models import File, FileChanges, FileCreate
+from app.models import File, FileChanges, FileCreate
 from sqlmodel import Session, select
-from utils import (check_duplicate_path, get_full_path, normalize_path,
+from app.utils import (check_duplicate_path, get_full_path, normalize_path,
                    scan_directory)
-from logger import logger
+from app.logger import logger
 import pika
 
 
