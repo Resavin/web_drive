@@ -7,7 +7,7 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     volumes:
-      - ./app:${ROOT_DIRECTORY}
+      - ./app:/web_drive/app
       - ./tests:/web_drive/tests
 
   db:
