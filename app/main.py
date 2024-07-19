@@ -1,24 +1,20 @@
 import os
+import uuid
 
 from app.config import settings
 from app.db import engine
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, Response, HTTPException, Cookie
 from fastapi.responses import FileResponse
-from app.models import FileChanges, FilePublic
+from app.models import FileChanges, FilePublic, SessionData
 from app.services import FileService
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, Session
 from fastapi.middleware.cors import CORSMiddleware
+from app.utils import auth_check
 
+# SQLModel.metadata.drop_all(engine)
 SQLModel.metadata.create_all(engine)
 app = FastAPI(debug=settings.app_debug)
 
-
-# @app.post("/create-file/")
-# def create_file(file: FileCreate):
-#     """
-#     DEBUG ROUTE FOR ADDING A RECORD TO DB WITHOUT UPLOADING THE FILE
-#     """
-#     return FileService.create_file(file)
 
 origins = [
     "http://localhost:3000",
@@ -31,6 +27,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.post("/create-session/")
+def create_session(response: Response):
+    with Session(engine) as session:
+        session_id = str(uuid.uuid4())
+        session_data = SessionData(session_id=session_id)
+        session_data = SessionData.model_validate(session_data)
+        session.add(session_data)
+        session.commit()
+        session.refresh(session_data)
+        response.set_cookie(key="session_id", value=session_data.session_id)
+        return session_data
+
+
+@app.delete("/delete-session/")
+def delete_session(session_id: str | None = Cookie(None)):
+    with Session(engine) as session:
+        session_data = session.get(SessionData, session_id)
+        if not session_data:
+            raise HTTPException(
+                status_code=404, detail="No sessiondata with this session_id in db"
+            )
+        session.delete(session_data)
+        session.commit()
+        return {"message": "Sessiondata was successfully deleted."}
+
+
+@app.get("/protected-route/")
+@auth_check
+def protected_route():
+    return "Session found"
+
+
+# @app.post("/create-file/")
+# def create_file(file: FileCreate):
+#     """
+#     Debug route for adding a record to db without uploading the file
+#     """
+#     return FileService.create_file(file)
 
 
 @app.get("/files/")

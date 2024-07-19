@@ -29,3 +29,8 @@ class FileChanges(SQLModel):
     name: str | None = Field(default=None)
     path: str | None = Field(default=None)
     comment: str | None = Field(default=None)
+
+
+class SessionData(SQLModel, table=True):
+    session_id: str = Field(index=True, primary_key=True, nullable=False)
+    created_at: datetime = Field(default=datetime.utcnow().isoformat(), nullable=False)

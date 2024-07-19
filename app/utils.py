@@ -1,10 +1,11 @@
 import os
 
 from app.config import settings
-from fastapi import HTTPException
-from app.models import File, FileChanges
+from fastapi import HTTPException, Cookie
+from app.models import File, FileChanges, SessionData
 from sqlmodel import Session, select
 from app.logger import logger
+from app.db import engine
 
 
 def get_full_path(file: File):
@@ -67,3 +68,22 @@ def scan_directory(directory):
             file_path = os.path.join(root, file)
             file_path_set.add("/" + file_path.removeprefix(directory + "/"))
     return file_path_set
+
+
+def auth_check(func):
+    def wrapper(session_id: str | None = Cookie(default=None)):
+        if not session_id:
+            raise HTTPException(status_code=400, detail="No session_id in cookies")
+        logger.debug("session_id: " + str(session_id))
+
+        with Session(engine) as session:
+            # statement = select(SessionData).where(SessionData.session_id == session_id)
+            # session_data = session.exec(statement).first()
+            session_data = session.get(SessionData, session_id)
+            if not session_data:
+                raise HTTPException(
+                    status_code=400, detail="No sessiondata with this session_id in db"
+                )
+        return func()
+
+    return wrapper
