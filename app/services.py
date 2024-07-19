@@ -1,25 +1,28 @@
-# services.py
-
 import os
 import shutil
+import uuid
 from datetime import datetime
 
+import pika
 from app.config import settings
 from app.db import engine
-from fastapi import HTTPException, UploadFile
-from app.models import File, FileChanges, FileCreate
-from sqlmodel import Session, select
-from app.utils import (check_duplicate_path, get_full_path, normalize_path,
-                   scan_directory)
 from app.logger import logger
-import pika
+from app.models import File, FileChanges, FileCreate
+from app.utils import (
+    check_duplicate_path,
+    get_full_path,
+    normalize_path,
+    scan_directory,
+)
+from fastapi import HTTPException, UploadFile
+from sqlmodel import Session, select
 
 
 class FileService:
     @staticmethod
     def create_file(file_data: FileCreate):
         """
-        DEBUG ROUTE FOR ADDING A RECORD TO DB WITHOUT UPLOADING THE FILE
+        Debug function for adding a record to db without uploading the file
         """
         file = File.model_validate(file_data)
         normalize_path(file)
@@ -96,8 +99,7 @@ class FileService:
         with Session(engine) as session:
             file = session.get(File, file_id)
             if not file:
-                raise HTTPException(
-                    status_code=404, detail="File record not found")
+                raise HTTPException(status_code=404, detail="File record not found")
             session.delete(file)
             session.commit()
 
@@ -125,13 +127,11 @@ class FileService:
         with Session(engine) as session:
             file = session.get(File, file_id)
             if not file:
-                raise HTTPException(
-                    status_code=404, detail="File record not found")
+                raise HTTPException(status_code=404, detail="File record not found")
 
             full_path = get_full_path(file)
             if not os.path.exists(full_path):
-                raise HTTPException(
-                    status_code=404, detail="File not found on disk")
+                raise HTTPException(status_code=404, detail="File not found on disk")
 
         return full_path
 
@@ -141,8 +141,7 @@ class FileService:
             with Session(engine) as session:
                 file = session.get(File, file_id)
                 if not file:
-                    raise HTTPException(
-                        status_code=404, detail="File record not found")
+                    raise HTTPException(status_code=404, detail="File record not found")
 
                 old_full_path = get_full_path(file)
                 if file_changes.name:
@@ -216,19 +215,45 @@ class FileService:
             if not file:
                 raise HTTPException(status_code=404, detail="file not found")
 
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters('rabbitmq'))
+        try:
+            connection = pika.BlockingConnection(pika.ConnectionParameters("rabbitmq"))
+        except Exception:
+            raise HTTPException(status_code=400, detail="Couldn't connect to rabbitmq")
+
         channel = connection.channel()
-        channel.queue_declare(queue='task_queue', durable=True)
 
+        task_queue = "task_queue"
+        channel.queue_declare(queue=task_queue, durable=True)
+
+        callback_queue = str(
+            channel.queue_declare(queue="", durable=True, exclusive=True).method.queue
+        )
         message = get_full_path(file)
+        channel.basic_publish(
+            exchange="",
+            routing_key=task_queue,
+            body=message,
+            properties=pika.BasicProperties(
+                reply_to=callback_queue,
+                delivery_mode=pika.DeliveryMode.Persistent,
+            ),
+        )
 
-        channel.basic_publish(exchange='',
-                              routing_key='task_queue',
-                              body=message,
-                              properties=pika.BasicProperties(
-                                  delivery_mode=pika.DeliveryMode.Persistent
-                              ))
-        logger.debug(f" [x] Sent {message}")
+        response = None
+
+        def on_response(ch, method, props, body):
+            nonlocal response
+            response = body.decode()
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        channel.basic_consume(
+            queue=callback_queue, on_message_callback=on_response, auto_ack=False
+        )
+        while response is None:
+            connection.process_data_events()
+            # channel.start_consuming()
+            # logger.debug("response " + response)
+
+        logger.debug(response)
         connection.close()
-        return {"message": "File was sent to workers"}
+        return {"message": response}
