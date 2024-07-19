@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 
-@app.post("/create-session/")
+@app.post("/create-session/", tags=["session"])
 def create_session(response: Response):
     with Session(engine) as session:
         session_id = str(uuid.uuid4())
@@ -42,7 +42,7 @@ def create_session(response: Response):
         return session_data
 
 
-@app.delete("/delete-session/")
+@app.delete("/delete-session/", tags=["session"])
 def delete_session(session_id: str | None = Cookie(None)):
     with Session(engine) as session:
         session_data = session.get(SessionData, session_id)
@@ -55,7 +55,7 @@ def delete_session(session_id: str | None = Cookie(None)):
         return {"message": "Sessiondata was successfully deleted."}
 
 
-@app.get("/protected-route/")
+@app.get("/protected-route/", tags=["session"])
 @auth_check
 def protected_route():
     return "Session found"
@@ -119,6 +119,6 @@ def sync():
     return FileService.sync()
 
 
-@app.post("/rotate-image/{file_id}")
+@app.post("/rotate-image/{file_id}", tags=["rabbitmq"])
 def rotate_image(file_id: int):
     return FileService.rotate_image(file_id)
